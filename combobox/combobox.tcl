@@ -85,7 +85,13 @@ proc ttk::combobox::CompleteEntry { W key } {
 }
 
 proc ttk::combobox::CompleteList { W key { start -1 } } {
+    after cancel {set ttk::combobox::keyaccumulator ""}
+
     set key [EscapeKey $key]
+
+    append ttk::combobox::keyaccumulator $key
+    set key $ttk::combobox::keyaccumulator
+    after 250 {set ttk::combobox::keyaccumulator ""}
 
     if { $start == -1 } {
         set start [expr { [$W curselection] + 1 }]
@@ -102,6 +108,7 @@ proc ttk::combobox::CompleteList { W key { start -1 } } {
     }
 
     if { $start > 0 } {
+        set ttk::combobox::keyaccumulator ""
         CompleteList $W $key 0
     }
 }
