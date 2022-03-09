@@ -1,6 +1,8 @@
 package require Tk
 
-namespace eval ttk::combobox {}
+namespace eval ttk::combobox {
+  set keyaccumulator ""
+}
 
 # Required to escape a few characters due to the string match used.
 proc ttk::combobox::EscapeKey { key } {
