@@ -1,6 +1,11 @@
 package require Tk
 
-namespace eval ttk::combobox {}
+namespace eval ttk::combobox {
+  set keyaccumulator ""
+
+  # state of CTRL key
+  set ctrlstat 0
+}
 
 # Required to escape a few characters due to the string match used.
 proc ttk::combobox::EscapeKey { key } {
@@ -41,6 +46,12 @@ proc ttk::combobox::PrevNext { W dir } {
 }
 
 proc ttk::combobox::CompleteEntry { W key } {
+
+    # Ignore key input while CTRL key is pressed
+    if {$ttk::combobox::ctrlstat} {
+        return
+    }
+
     if { [string length $key] > 1 && [string tolower $key] != $key } {
         return
     }
@@ -85,7 +96,13 @@ proc ttk::combobox::CompleteEntry { W key } {
 }
 
 proc ttk::combobox::CompleteList { W key { start -1 } } {
+    after cancel {set ttk::combobox::keyaccumulator ""}
+
     set key [EscapeKey $key]
+
+    append ttk::combobox::keyaccumulator $key
+    set key $ttk::combobox::keyaccumulator
+    after 250 {set ttk::combobox::keyaccumulator ""}
 
     if { $start == -1 } {
         set start [expr { [$W curselection] + 1 }]
@@ -102,7 +119,14 @@ proc ttk::combobox::CompleteList { W key { start -1 } } {
     }
 
     if { $start > 0 } {
+        set ttk::combobox::keyaccumulator ""
         CompleteList $W $key 0
+    }
+}
+
+proc ttk::combobox::ControlKeyRelease {keycode} {
+    if {$keycode==17} {
+        set ttk::combobox::ctrlstat 0
     }
 }
 
@@ -113,3 +137,8 @@ bind TCombobox       <KeyRelease> { ttk::combobox::CompleteEntry %W %K }
 bind TCombobox       <Up>         { ttk::combobox::PrevNext %W up }
 bind TCombobox       <Down>       { ttk::combobox::PrevNext %W down }
 bind TCombobox       <Alt-Down>   { ttk::combobox::Post %W }
+
+# Bind to CTRL key
+bind TCombobox <Control_L> {set ttk::combobox::ctrlstat 1}
+bind TCombobox <Control_R> {set ttk::combobox::ctrlstat 1}
+bind TCombobox <Control-KeyRelease> {ttk::combobox::ControlKeyRelease %k}
